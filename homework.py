@@ -33,12 +33,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler = RotatingFileHandler('hw_logger.log', maxBytes=50000000, backupCount=1)
+handler = RotatingFileHandler(
+    'hw_logger.log', maxBytes=50000000, backupCount=1
+)
 logger.addHandler(handler)
 
 
 class ApiError(Exception):
     """Ошибка, выбрасываемая при некорректной работе с API."""
+
     pass
 
 
