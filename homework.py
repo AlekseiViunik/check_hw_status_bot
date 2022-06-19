@@ -4,10 +4,13 @@ import requests
 import sys
 import time
 
+import telegram.error
 from dotenv import load_dotenv
 from http import HTTPStatus
 from logging.handlers import RotatingFileHandler
 from telegram import Bot
+
+from exceptions import ApiError, SendMessageError
 
 load_dotenv()
 
@@ -20,7 +23,7 @@ ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 
-HOMEWORK_STATUSES = {
+VERDICT_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
@@ -39,19 +42,14 @@ handler = RotatingFileHandler(
 logger.addHandler(handler)
 
 
-class ApiError(Exception):
-    """Ошибка, выбрасываемая при некорректной работе с API."""
-
-    pass
-
-
 def send_message(bot, message):
     """Отправляем сообщение."""
+    logger.info(f'Начало отправки сообщения {message}')
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info(f'Сообщение: {message} отправлено')
-    except Exception as err:
-        logger.error(f'Сообщение "{message}" не отправлено, ошибка {err}')
+    except telegram.error.TelegramError as err:
+        raise SendMessageError(f'Сообщение "{message}" не отправлено, ошибка {err}')
 
 
 def get_api_answer(current_timestamp):
@@ -62,9 +60,11 @@ def get_api_answer(current_timestamp):
         logger.info('Пытаюсь подключиться к эндпоинту')
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
         if response.status_code != HTTPStatus.OK:
-            raise ApiError('Ошибка подключения к Эндпоинту')
+            raise ApiError('Ошибка подключения к Эндпоинту. '
+                           f'Время запроса: {timestamp}')
     except Exception as err:
-        raise ApiError(f'Ошибка подключения к Эндпоинту! {err}')
+        raise ApiError(f'Ошибка подключения к Эндпоинту! {err}. '
+                       f'Время запроса: {timestamp}')
     else:
         return response.json()
 
@@ -75,22 +75,23 @@ def check_response(response):
         message = 'Ответ API не содержит словаря с данными'
         raise TypeError(message)
 
-    elif any([response.get('homeworks') is None,
-              response.get('current_date') is None]):
-        message = ('Словарь ответа API не содержит ключей homeworks и/или '
-                   'current_date')
+    if response.get('homeworks') is None:
+        message = 'Словарь ответа API не содержит ключа homeworks'
         raise KeyError(message)
 
-    elif not isinstance(response.get('homeworks'), list):
+    if response.get('current_date') is None:
+        message = 'Словарь ответа API не содержит ключа current_date'
+        raise KeyError(message)
+
+    if not isinstance(response.get('homeworks'), list):
         message = 'Ключ homeworks в ответе API не содержит списка'
         raise TypeError(message)
 
-    elif not response.get('homeworks'):
+    if not response.get('homeworks'):
         logger.debug('Статус проверки не изменился')
         return []
 
-    else:
-        return response['homeworks']
+    return response['homeworks']
 
 
 def parse_status(homework):
@@ -98,17 +99,17 @@ def parse_status(homework):
     if homework.get('homework_name') is None:
         message = 'Словарь ответа API не содержит ключа homework_name'
         raise KeyError(message)
-    elif homework.get('status') is None:
+    if homework.get('status') is None:
         message = 'Словарь ответа API не содержит ключа status'
         raise KeyError(message)
     homework_name = homework['homework_name']
-    homework_status = homework['status']
+    verdict_status = homework['status']
 
-    if homework_status in HOMEWORK_STATUSES:
-        verdict = HOMEWORK_STATUSES[homework_status]
-    else:
+    if verdict_status not in VERDICT_STATUSES:
         message = 'Статус ответа не известен'
         raise ApiError(message)
+    else:
+        verdict = VERDICT_STATUSES[verdict_status]
 
     message = (f'Изменился статус проверки работы "{homework_name}".'
                f' {verdict}')
@@ -137,17 +138,18 @@ def main():
         sys.exit(error_message)
 
     bot = Bot(token=TELEGRAM_TOKEN)
+    bot.send_message(TELEGRAM_CHAT_ID, 'Начало работы бота')
     current_timestamp = int(time.time())
     prev_status = None
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            homework = check_response(response)
-            cur_status = parse_status(homework)
-            if prev_status != cur_status:
-                send_message(bot, cur_status)
-                prev_status = cur_status
-            current_timestamp = response.get('current_date')
+            if response:
+                homework = check_response(response)
+                if len(homework) > 0:
+                    message = parse_status(homework)
+                    send_message(bot, message)
+                current_timestamp = response.get('current_date')
         except Exception as err:
             logger.error(f'Сбой в работе программы: {err}')
         finally:
