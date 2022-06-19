@@ -3,8 +3,8 @@ import os
 import requests
 import sys
 import time
-
 import telegram.error
+
 from dotenv import load_dotenv
 from http import HTTPStatus
 from logging.handlers import RotatingFileHandler
@@ -49,7 +49,9 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info(f'Сообщение: {message} отправлено')
     except telegram.error.TelegramError as err:
-        raise SendMessageError(f'Сообщение "{message}" не отправлено, ошибка {err}')
+        raise SendMessageError(
+            f'Сообщение "{message}" не отправлено, ошибка {err}'
+        )
 
 
 def get_api_answer(current_timestamp):
@@ -140,7 +142,6 @@ def main():
     bot = Bot(token=TELEGRAM_TOKEN)
     bot.send_message(TELEGRAM_CHAT_ID, 'Начало работы бота')
     current_timestamp = int(time.time())
-    prev_status = None
     while True:
         try:
             response = get_api_answer(current_timestamp)
