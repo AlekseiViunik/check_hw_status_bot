@@ -61,6 +61,7 @@ def get_api_answer(current_timestamp):
     try:
         logger.info('Пытаюсь подключиться к эндпоинту')
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        logger.info(f'Ответ получен: {response.json()}')
         if response.status_code != HTTPStatus.OK:
             raise ApiError('Ошибка подключения к Эндпоинту. '
                            f'Время запроса: {timestamp}')
@@ -93,7 +94,7 @@ def check_response(response):
         logger.debug('Статус проверки не изменился')
         return []
 
-    return response['homeworks']
+    return response['homeworks'][0]
 
 
 def parse_status(homework):
