@@ -30,15 +30,19 @@ VERDICT_STATUSES = {
 }
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    filename='program.log',
-    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
-)
+        level=logging.DEBUG,
+        filename='program.log',
+        format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
+    )
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - %(message)s'
+)
 handler = RotatingFileHandler(
     'hw_logger.log', maxBytes=50000000, backupCount=1
 )
+handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
@@ -63,11 +67,15 @@ def get_api_answer(current_timestamp):
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
         logger.info(f'Ответ получен: {response.json()}')
         if response.status_code != HTTPStatus.OK:
-            raise ApiError('Ошибка подключения к Эндпоинту. '
-                           f'Время запроса: {timestamp}')
+            raise ApiError('Ошибка подключения к Эндпоинту: '
+                           f'ENDPOINT: "{ENDPOINT}", '
+                           f'HEADERS: "{HEADERS}", '
+                           f'params: "{params}"!')
     except Exception as err:
-        raise ApiError(f'Ошибка подключения к Эндпоинту! {err}. '
-                       f'Время запроса: {timestamp}')
+        raise ApiError(f'Ошибка {err} подключения к Эндпоинту: '
+                       f'ENDPOINT: "{ENDPOINT}", '
+                       f'HEADERS: "{HEADERS}", '
+                       f'params: "{params}"!')
     else:
         return response.json()
 
@@ -93,8 +101,8 @@ def check_response(response):
     if not response.get('homeworks'):
         logger.debug('Статус проверки не изменился')
         return []
-
-    return response['homeworks'][0]
+    logger.debug(f'ответ {response["homeworks"]}')
+    return response['homeworks']
 
 
 def parse_status(homework):
@@ -111,8 +119,7 @@ def parse_status(homework):
     if verdict_status not in VERDICT_STATUSES:
         message = 'Статус ответа не известен'
         raise ApiError(message)
-    else:
-        verdict = VERDICT_STATUSES[verdict_status]
+    verdict = VERDICT_STATUSES[verdict_status]
 
     message = (f'Изменился статус проверки работы "{homework_name}".'
                f' {verdict}')
@@ -152,7 +159,10 @@ def main():
                     message = parse_status(homework)
                     send_message(bot, message)
                 current_timestamp = response.get('current_date')
+        except SendMessageError:
+            logger.error(f'Сообщение "{message}" не отправлено')
         except Exception as err:
+            bot.send_message(TELEGRAM_CHAT_ID, f'Сбой в работе программы: {err}')
             logger.error(f'Сбой в работе программы: {err}')
         finally:
             time.sleep(RETRY_TIME)
