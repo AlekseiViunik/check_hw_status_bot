@@ -160,7 +160,7 @@ def main():
                     send_message(bot, message)
                 current_timestamp = response.get('current_date')
         except SendMessageError:
-            logger.error(f'Сообщение не отправлено')
+            logger.error('Сообщение не отправлено')
         except Exception as err:
             bot.send_message(TELEGRAM_CHAT_ID, f'Сбой в программе: {err}')
             logger.error(f'Сбой в работе программы: {err}')
