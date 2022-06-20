@@ -30,10 +30,10 @@ VERDICT_STATUSES = {
 }
 
 logging.basicConfig(
-        level=logging.DEBUG,
-        filename='program.log',
-        format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
-    )
+    level=logging.DEBUG,
+    filename='program.log',
+    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
+)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter(
@@ -160,9 +160,9 @@ def main():
                     send_message(bot, message)
                 current_timestamp = response.get('current_date')
         except SendMessageError:
-            logger.error(f'Сообщение "{message}" не отправлено')
+            logger.error(f'Сообщение не отправлено')
         except Exception as err:
-            bot.send_message(TELEGRAM_CHAT_ID, f'Сбой в работе программы: {err}')
+            bot.send_message(TELEGRAM_CHAT_ID, f'Сбой в программе: {err}')
             logger.error(f'Сбой в работе программы: {err}')
         finally:
             time.sleep(RETRY_TIME)
