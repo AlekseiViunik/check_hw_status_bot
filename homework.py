@@ -32,15 +32,15 @@ VERDICT_STATUSES = {
 logging.basicConfig(
     level=logging.DEBUG,
     filename='program.log',
-    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
+    format='%(asctime)s, %(levelname)s, %(message)s'
 )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter(
-    '%(asctime)s - %(levelname)s - %(message)s'
+    '%(asctime)s - %(levelname)s - %(message)s - %(lineno)d'
 )
 handler = RotatingFileHandler(
-    'hw_logger.log', maxBytes=50000000, backupCount=1
+    'hw_logger.log', maxBytes=5000000, backupCount=1
 )
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -107,14 +107,14 @@ def check_response(response):
 
 def parse_status(homework):
     """Функция возвращает ответ API со статусом проверки."""
-    if homework.get('homework_name') is None:
+    if homework[0].get('homework_name') is None:
         message = 'Словарь ответа API не содержит ключа homework_name'
         raise KeyError(message)
-    if homework.get('status') is None:
+    if homework[0].get('status') is None:
         message = 'Словарь ответа API не содержит ключа status'
         raise KeyError(message)
-    homework_name = homework['homework_name']
-    verdict_status = homework['status']
+    homework_name = homework[0]['homework_name']
+    verdict_status = homework[0]['status']
 
     if verdict_status not in VERDICT_STATUSES:
         message = 'Статус ответа не известен'
@@ -165,6 +165,7 @@ def main():
             bot.send_message(TELEGRAM_CHAT_ID, f'Сбой в программе: {err}')
             logger.error(f'Сбой в работе программы: {err}')
         finally:
+            logger.debug(f'Сплю {RETRY_TIME} секунд!')
             time.sleep(RETRY_TIME)
 
 
