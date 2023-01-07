@@ -1,4 +1,5 @@
 # Check_hw_status_bot
+![Python version](https://img.shields.io/badge/python-3.7-yellow)
 
 ```sh
 It is a python telegram bot which checks the status of homework each 10 minutes and send it to you in telegram. 
