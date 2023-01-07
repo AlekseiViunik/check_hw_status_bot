@@ -1,13 +1,13 @@
 # Check_hw_status_bot
 
 ```sh
-It is a python telegram bot which checks the homework's status each 10 minutes and send it to you in telegram. 
+It is a python telegram bot which checks the status of homework each 10 minutes and send it to you in telegram. 
 It also write logs in journal.
 
 Possible messages in TG:
 
 - Работа проверена: ревьюеру всё понравилось. Ура! - Everything is good. Yippee!
-- Работа взята на проверку ревьюером. - It's in progress
+- Работа взята на проверку ревьюером. - It is in progress
 - Работа проверена: у ревьюера есть замечания. - Need to fix something
 
 Это телеграмм бот, написанный на python, который проверяет статус домашнего задания и присылает отчет в телеграмм. 
