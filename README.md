@@ -43,5 +43,10 @@ Install dependencies  from requirements.txt./
 pip install -r requirements.txt
 ``` 
 Create an .env file and add secret data to it./Создать файл .env и вписать туда секреты
-
+```
+Secrets:
+#YA_TOKEN ![Practicum students can get YA_TOKEN here/Студенты практикума могут получить YA_TOKEN здесь](https://practicum.yandex.ru/learn/backend-developer/courses/8a4693f6-fa0e-4ab0-babd-a13453ad99c0/sprints/23142/topics/9e083c61-4d9d-4f9c-92e2-3b670623231a/lessons/6995354c-02c2-457d-8a54-5f00ab6e787b/)
+#TELEGRAM_TOKEN - Use BotFather to get telegram token
+#TELEGRAM_CHAT_ID - Use UserInfoBot to get your id
+```
 Run homework.py/Запустить homework.py
